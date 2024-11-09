@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Thribhuvan-VPC
+
+Parameters:
+  VPCNameParameter:
+    Type: String
+    Default: VPC101
+
+Resources:
+  # VPC
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '10.0.0.0/16'
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  # Subnet 1 (Public)
+  PublicSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: '10.0.1.0/24'
+      AvailabilityZone: 'us-east-1a'  # Modify based on your region
+      MapPublicIpOnLaunch: 'true'
+      Tags:
+        - Key: Name
+          Value: PublicSubnet1
+
+  # Subnet 2 (Private)
+  PrivateSubnet1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: '10.0.2.0/24'
+      AvailabilityZone: 'us-east-1b'  # Modify based on your region
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet1
+
+  # Internet Gateway
+  MyInternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyInternetGateway
+
+  # Attach Internet Gateway to VPC
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
+
+  # Route Table for Public Subnet
+  PublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref MyVPC
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  # Route for Public Subnet to access the Internet
+  PublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref MyInternetGateway
+
+  # Associate Public Subnet with Route Table
+  PublicSubnet1RouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+Outputs:
+  VPCId:
+    Description: The ID of the created VPC
+    Value: !Ref MyVPC
+  PublicSubnet1Id:
+    Description: The ID of the created Public Subnet 1
+    Value: !Ref PublicSubnet1
+  PrivateSubnet1Id:
+    Description: The ID of the created Private Subnet 1
+    Value: !Ref PrivateSubnet1
